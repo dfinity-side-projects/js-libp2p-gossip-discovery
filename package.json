@@ -1,0 +1,51 @@
+{
+  "name": "libp2p-gossip-discovery",
+  "version": "0.0.0",
+  "description": "implements peer discovery using a gossip protocol",
+  "main": "index.js",
+  "scripts": {
+    "coveralls": "npm run coverage && nyc report --reporter=text-lcov | coveralls",
+    "coverage": "nyc npm test",
+    "lint": "standard",
+    "test": "node ./tests/index.js",
+    "build:docs": "documentation build --github  -f md ./index.js > ./docs/index.md"
+  },
+  "keywords": [
+    "libp2p",
+    "gossip",
+    "discovery"
+  ],
+  "author": "mjbecze <mjbecze@gmail.com>",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "debug": "^3.1.0",
+    "events": "^1.1.1",
+    "multiaddr": "^3.0.1",
+    "peer-id": "^0.10.1",
+    "peer-info": "^0.11.0",
+    "pull-pushable": "^2.1.1",
+    "pull-reader": "^1.2.9",
+    "pull-stream": "^3.6.1",
+    "safe-buffer": "^5.1.1"
+  },
+  "devDependencies": {
+    "coveralls": "^3.0.0",
+    "documentation": "^5.2.0",
+    "istanbul": "^0.4.1",
+    "libp2p": "^0.12.4",
+    "libp2p-multiplex": "^0.5.0",
+    "libp2p-tcp": "^0.11.0",
+    "nyc": "^11.2.1",
+    "pify": "^3.0.0",
+    "standard": "^10.0.0",
+    "tape": "^4.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:wanderer/js-libp2p-gossip-discovery.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wanderer/js-libp2p-gossip-discovery/issues"
+  },
+  "homepage": "https://github.com/wanderer/js-libp2p-gossip-discovery"
+}
