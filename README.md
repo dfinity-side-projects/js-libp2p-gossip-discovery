@@ -1,4 +1,5 @@
 # SYNOPSIS 
+
 [![NPM Package](https://img.shields.io/npm/v/libp2p-gossip-discovery.svg?style=flat-square)](https://www.npmjs.org/package/libp2p-gossip-discovery)
 [![Build Status](https://img.shields.io/travis/wanderer/libp2p-gossip-discovery.svg?branch=master&style=flat-square)](https://travis-ci.org/wanderer/libp2p-gossip-discovery)
 [![Coverage Status](https://img.shields.io/coveralls/wanderer/libp2p-gossip-discovery.svg?style=flat-square)](https://coveralls.io/r/wanderer/libp2p-gossip-discovery)
