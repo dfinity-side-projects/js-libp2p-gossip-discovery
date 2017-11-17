@@ -73,6 +73,8 @@ module.exports = class handlePeers extends EventEmitter {
 
   _peerDiscovery (node, targetNumberOfPeers, newPeers) {
     let knownPeers = node.peerBook.getAllArray()
+
+    // If we want more peers, and more peers exist
     if (knownPeers.length < targetNumberOfPeers && newPeers.length !== 0) {
       newPeers.forEach(peer => {
         // Check if attempting to discover self, break if so.
@@ -91,6 +93,9 @@ module.exports = class handlePeers extends EventEmitter {
               const peers = await readPeers(node, conn)
               const newPeers = await this.filterPeers(node, peers)
               return this._peerDiscovery(node, targetNumberOfPeers, newPeers)
+
+              // If any errors: assume malicious, remove from our list
+              // TODO: extend peerbook to track reputation...
             } catch (e) {
               // Remove peers that are potentially malicous
               node.hangUp(peer, () => {
