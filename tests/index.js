@@ -37,7 +37,6 @@ class Node extends libp2p {
 class Malicious extends libp2p {
   constructor (peerInfo, peerBook, options) {
     options = options || {}
-    const discovery = new GossipDiscovery(3)
 
     const modules = {
       transport: [
@@ -47,12 +46,10 @@ class Malicious extends libp2p {
         muxer: [
           multiplex
         ]
-      },
-      discovery: [ discovery ]
+      }
     }
 
     super(modules, peerInfo, peerBook, options)
-    discovery.attach(this)
 
     this.handle('/discovery/gossip/0.0.0', (proto, conn) => {
       pull(pull.empty(), conn)
@@ -63,7 +60,6 @@ class Malicious extends libp2p {
 class Malicous2 extends libp2p {
   constructor (peerInfo, peerBook, options) {
     options = options || {}
-    const discovery = new GossipDiscovery(3)
 
     const modules = {
       transport: [
@@ -73,12 +69,10 @@ class Malicous2 extends libp2p {
         muxer: [
           multiplex
         ]
-      },
-      discovery: [ discovery ]
+      }
     }
 
     super(modules, peerInfo, peerBook, options)
-    discovery.attach(this)
 
     this.handle('/discovery/gossip/0.0.0', (proto, conn) => {
       pull(pull.once(Buffer.from([99, 1])), conn)
@@ -108,19 +102,6 @@ tape('tests', async t => {
   }))
 
   const addresses = nodes.map(n => multiaddr(n.peerInfo.multiaddrs.toArray()[0]))
-  // nodes[2].modules.discovery.on('peer', peer => {
-  //   t.pass()
-  //   isDone()
-  // })
-  // nodes[1].modules.discovery.on('peer', peer => {
-  //   t.pass()
-  //   isDone()
-  // })
-  // nodes[0].modules.discovery.on('peer', peer => {
-  //   t.pass()
-  //   isDone()
-  // })
-  // 
   nodes[2].on('peer:discovery', peer => {
     t.pass()
     isDone()
@@ -134,12 +115,10 @@ tape('tests', async t => {
     isDone()
   })
 
-  console.log("awaits: L138")
   await pify(nodes[0].dial.bind(nodes[0]))(addresses[1], '/discovery/gossip/0.0.0')
   await pify(nodes[2].dial.bind(nodes[2]))(addresses[0], '/discovery/gossip/0.0.0')
 
   function isDone () {
-    console.log("isDone call");
     count++
     if (count === 3) {
       const stoping = nodes.map(n => {
