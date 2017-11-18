@@ -60,6 +60,15 @@ module.exports = class handlePeers extends EventEmitter {
   }
 
   _onConnection (peer) {
+    if (this.node.peerInfo.id._idB58String === peer.id._idB58String) {
+      console.log("node id match - returning early in _onConnection")
+      if (node.peerBook.has(peer)) {
+        console.log("I have myself.")
+      }
+      this.node.peerBook.remove(peer)
+      return
+    }
+
     log('connected peer, restarting discovery')
     try {
       const info = this.node.peerBook.get(peer)
@@ -75,6 +84,15 @@ module.exports = class handlePeers extends EventEmitter {
     let knownPeers = node.peerBook.getAllArray()
     if (knownPeers.length < targetNumberOfPeers && newPeers.length !== 0) {
       newPeers.forEach(peer => {
+        if (node.peerInfo.id._idB58String === peer.id._idB58String) {
+          console.log("node id match - returning early in _peerDiscovery")
+          if (node.peerBook.has(peer)) {
+            console.log("I have myself.")
+          }
+          node.peerBook.remove(peer)
+          return
+        }
+
         peer._askedForPeers = true
         node.dial(peer, PROTO, async (err, conn) => {
           if (err) {
@@ -99,6 +117,7 @@ module.exports = class handlePeers extends EventEmitter {
   }
 
   filterPeers (node, peers) {
+    console.log("filterPeers")
     const ids = Object.keys(peers)
     const newPeers = []
     ids.forEach(async id => {
@@ -122,6 +141,7 @@ module.exports = class handlePeers extends EventEmitter {
 }
 
 function readPeers (node, conn) {
+  console.log("readPeers")
   const reader = Reader()
   pull(conn, reader)
   return new Promise((resolve, reject) => {
@@ -148,6 +168,7 @@ function readPeers (node, conn) {
 }
 
 function peerBookToJson (peerBook) {
+  console.log("peerBookToJson")
   let peers = {}
   peerBook.getAllArray().forEach(pi => {
     peers[pi.id.toB58String()] = pi.multiaddrs.toArray().map(add => {
