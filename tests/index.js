@@ -32,7 +32,7 @@ class Node extends libp2p {
   }
 }
 
-class Malicous extends libp2p {
+class Malicious extends libp2p {
   constructor (peerInfo, peerBook, options) {
     options = options || {}
 
@@ -133,14 +133,14 @@ tape('tests', async t => {
   }
 })
 
-tape('erros - no data sent', async t => {
+tape('Errors - no data sent', async t => {
   const peerIds = await Promise.all([0, 1].map(id => getPeerId(id)))
   let peerInfo = new PeerInfo(peerIds[0])
   let good = new Node(peerInfo)
   good.peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9090`)
 
   peerInfo = new PeerInfo(peerIds[1])
-  const mal = new Malicous(peerInfo)
+  const mal = new Malicious(peerInfo)
   mal.peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9091`)
 
   await Promise.all([mal, good].map(n => {
@@ -162,7 +162,7 @@ tape('erros - no data sent', async t => {
   })
 })
 
-tape('erros - invalid len', async t => {
+tape('Errors - invalid len', async t => {
   const peerIds = await Promise.all([0, 1].map(id => getPeerId(id)))
   let peerInfo = new PeerInfo(peerIds[0])
   let good = new Node(peerInfo)
