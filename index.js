@@ -75,10 +75,16 @@ module.exports = class handlePeers extends EventEmitter {
     let knownPeers = node.peerBook.getAllArray()
     if (knownPeers.length < targetNumberOfPeers && newPeers.length !== 0) {
       newPeers.forEach(peer => {
+        // Check if attempting to discover self, break if so.
+        if (node.peerInfo.id._idB58String === peer.id._idB58String) {
+          node.peerBook.remove(peer)
+          return
+        }
+
         peer._askedForPeers = true
         node.dial(peer, PROTO, async (err, conn) => {
           if (err) {
-            // remove peers that we cannot connect to
+            // Remove peers that we cannot connect to
             node.peerBook.remove(peer)
           } else {
             try {
@@ -86,7 +92,7 @@ module.exports = class handlePeers extends EventEmitter {
               const newPeers = await this.filterPeers(node, peers)
               return this._peerDiscovery(node, targetNumberOfPeers, newPeers)
             } catch (e) {
-              // remove peers that are potinal malicous
+              // Remove peers that are potentially malicous
               node.hangUp(peer, () => {
                 node.peerBook.remove(peer)
                 node.emit('error', peer)
