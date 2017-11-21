@@ -1,6 +1,6 @@
 {
   "name": "libp2p-gossip-discovery",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "implements peer discovery using a gossip protocol",
   "main": "index.js",
   "scripts": {
