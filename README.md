@@ -68,7 +68,6 @@ node.start(() => {
 **Parameters**
 
 -   `targetNumberOfPeers` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** the max number of peers to add to the peer book
--   `node` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** an instace of [libp2p](https://github.com/libp2p/js-libp2p)
 
 ## attach
 

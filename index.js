@@ -13,7 +13,6 @@ const PROTO = '/discovery/gossip/0.0.0'
 
 module.exports = class handlePeers extends EventEmitter {
   /**
-   * @param {Object} node - an instace of [libp2p](https://github.com/libp2p/js-libp2p)
    * @param {Number} targetNumberOfPeers - the max number of peers to add to the peer book
    */
   constructor (targetNumberOfPeers) {

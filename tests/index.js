@@ -120,12 +120,12 @@ tape('tests', async t => {
   function isDone () {
     count++
     if (count === 3) {
-      const stoping = nodes.map(n => {
+      const stopping = nodes.map(n => {
         return new Promise((resolve, reject) => {
           n.stop(resolve)
         })
       })
-      Promise.all(stoping).then(() => {
+      Promise.all(stopping).then(() => {
         t.end()
       })
     }
