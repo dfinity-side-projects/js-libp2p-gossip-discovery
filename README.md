@@ -25,6 +25,7 @@ const multiplex = require('libp2p-multiplex')
 class Node extends libp2p {
   constructor (peerInfo, peerBook, options) {
     options = options || {}
+    const discovery = new GossipDiscovery(3)
 
     const modules = {
       transport: [
@@ -34,11 +35,14 @@ class Node extends libp2p {
         muxer: [
           multiplex
         ]
-      }
+      },
+      discovery: [
+        discovery
+      ]
     }
 
     super(modules, peerInfo, peerBook, options)
-    this.discovery = new GossipDiscovery(this, 10)
+    this.attach(this)
   }
 }
 
@@ -47,7 +51,7 @@ class Node extends libp2p {
 const node = new Node(peerInfo)
 
 node.start(() => {
-  node.discovery.start()
+  
 })
 
 ```

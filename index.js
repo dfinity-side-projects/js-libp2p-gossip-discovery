@@ -18,17 +18,21 @@ module.exports = class handlePeers extends EventEmitter {
    */
   constructor (node, targetNumberOfPeers) {
     super()
-    this.node = node
     this.targetNumberOfPeers = targetNumberOfPeers
     this._onConnection = this._onConnection.bind(this)
+  }
+
+  attach (node) {
+    this.node = node
   }
 
   /**
    * starts the gossip process
    */
-  start () {
+  start (cb) {
     const node = this.node
     node.handle(PROTO, (proto, conn) => {
+      console.log("handle cb...")
       const p = Pushable()
       pull(p, conn)
 
@@ -44,14 +48,26 @@ module.exports = class handlePeers extends EventEmitter {
       p.end()
     })
     this.peerDiscovery(this.targetNumberOfPeers)
+    console.log("peer discovery started...")
+
+    if (cb) {
+      console.log("calling start cb")
+      cb()
+    }
   }
 
   /**
    * stop discovery
    */
-  stop () {
+  stop (cb) {
+    console.log("calling stop in node")
     this.node.unhandle(PROTO)
     this.node.removeListener('peer:connect', this._onConnection)
+
+    if (cb) {
+      console.log("calling stop cb")
+      cb()
+    }
   }
 
   peerDiscovery (targetNumberOfPeers) {
@@ -106,6 +122,7 @@ module.exports = class handlePeers extends EventEmitter {
   }
 
   filterPeers (node, peers) {
+    console.log("filterpeers")
     const ids = Object.keys(peers)
     const newPeers = []
     ids.forEach(async id => {
@@ -121,6 +138,7 @@ module.exports = class handlePeers extends EventEmitter {
         })
         node.peerBook.put(peerInfo)
         newPeers.push(peerInfo)
+        console.log("before emit :  peer")
         this.emit('peer', peerInfo)
       }
     })

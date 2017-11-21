@@ -15,6 +15,7 @@ const GossipDiscovery = require('../')
 class Node extends libp2p {
   constructor (peerInfo, peerBook, options) {
     options = options || {}
+    const discovery = new GossipDiscovery(3)
 
     const modules = {
       transport: [
@@ -24,11 +25,12 @@ class Node extends libp2p {
         muxer: [
           multiplex
         ]
-      }
+      },
+      discovery
     }
 
     super(modules, peerInfo, peerBook, options)
-    this.discovery = new GossipDiscovery(this, 3)
+    discovery.attach(this)
   }
 }
 
@@ -76,7 +78,7 @@ class Malicous2 extends libp2p {
   }
 }
 
-tape('tests', async t => {
+tape.only('tests', async t => {
   t.plan(3)
   let count = 0
 
@@ -91,30 +93,30 @@ tape('tests', async t => {
 
   await Promise.all(nodes.map(n => {
     return new Promise((resolve, reject) => {
-      n.start(() => {
-        n.discovery.start()
-        resolve()
-      })
+      n.start(resolve)
     })
   }))
 
   const addresses = nodes.map(n => multiaddr(n.peerInfo.multiaddrs.toArray()[0]))
-  nodes[2].discovery.on('peer', peer => {
+  nodes[2].on('peer:discovery', peer => {
+    console.log("x")
     t.pass()
     isDone()
   })
 
-  nodes[1].discovery.on('peer', peer => {
+  nodes[1].on('peer:discovery', peer => {
     t.pass()
     isDone()
   })
 
-  nodes[0].discovery.on('peer', peer => {
+  nodes[0].on('peer:discovery', peer => {
     t.pass()
     isDone()
   })
 
+  console.log("before first await")
   await pify(nodes[0].dial.bind(nodes[0]))(addresses[1], '/discovery/gossip/0.0.0')
+  console.log("before second await")
   await pify(nodes[2].dial.bind(nodes[2]))(addresses[0], '/discovery/gossip/0.0.0')
 
   function isDone () {
@@ -122,7 +124,6 @@ tape('tests', async t => {
     if (count === 3) {
       const stoping = nodes.map(n => {
         return new Promise((resolve, reject) => {
-          n.discovery.stop()
           n.stop(resolve)
         })
       })
@@ -146,9 +147,6 @@ tape('Errors - no data sent', async t => {
   await Promise.all([mal, good].map(n => {
     return new Promise((resolve, reject) => {
       n.start(() => {
-        if (n.discovery) {
-          n.discovery.start()
-        }
         resolve()
       })
     })
@@ -156,7 +154,6 @@ tape('Errors - no data sent', async t => {
   await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
   good.on('error', () => {
     t.equals(good.peerBook.getAllArray().length, 0)
-    good.discovery.stop()
     good.stop(() => {})
     mal.stop(() => {})
     t.end()
@@ -176,9 +173,6 @@ tape('Errors - invalid len', async t => {
   await Promise.all([mal, good].map(n => {
     return new Promise((resolve, reject) => {
       n.start(() => {
-        if (n.discovery) {
-          n.discovery.start()
-        }
         resolve()
       })
     })
@@ -186,7 +180,6 @@ tape('Errors - invalid len', async t => {
   await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
   good.on('error', () => {
     t.equals(good.peerBook.getAllArray().length, 0)
-    good.discovery.stop()
     good.stop(() => {})
     mal.stop(() => {})
     t.end()
