@@ -156,6 +156,7 @@ tape('Errors - no data sent', async t => {
   await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
   good.on('error', () => {
     t.equals(good.peerBook.getAllArray().length, 0)
+    good.discovery.stop()
     good.stop(() => {})
     mal.stop(() => {})
     t.end()
@@ -185,6 +186,7 @@ tape('Errors - invalid len', async t => {
   await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
   good.on('error', () => {
     t.equals(good.peerBook.getAllArray().length, 0)
+    good.discovery.stop()
     good.stop(() => {})
     mal.stop(() => {})
     t.end()
