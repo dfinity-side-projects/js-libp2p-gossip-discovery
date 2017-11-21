@@ -83,7 +83,7 @@ module.exports = class handlePeers extends EventEmitter {
         peer._askedForPeers = true
         node.dial(peer, PROTO, async (err, conn) => {
           if (err) {
-            // remove peers that we cannot connect to
+            // Remove peers that we cannot connect to
             node.peerBook.remove(peer)
           } else {
             try {
@@ -91,7 +91,7 @@ module.exports = class handlePeers extends EventEmitter {
               const newPeers = await this.filterPeers(node, peers)
               return this._peerDiscovery(node, targetNumberOfPeers, newPeers)
             } catch (e) {
-              // remove peers that are potinal malicous
+              // Remove peers that are potentially malicous
               node.hangUp(peer, () => {
                 node.peerBook.remove(peer)
                 node.emit('error', peer)
