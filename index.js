@@ -16,17 +16,20 @@ module.exports = class handlePeers extends EventEmitter {
    * @param {Object} node - an instace of [libp2p](https://github.com/libp2p/js-libp2p)
    * @param {Number} targetNumberOfPeers - the max number of peers to add to the peer book
    */
-  constructor (node, targetNumberOfPeers) {
+  constructor (targetNumberOfPeers) {
     super()
-    this.node = node
     this.targetNumberOfPeers = targetNumberOfPeers
     this._onConnection = this._onConnection.bind(this)
+  }
+
+  attach (node) {
+    this.node = node
   }
 
   /**
    * starts the gossip process
    */
-  start () {
+  start (cb) {
     const node = this.node
     node.handle(PROTO, (proto, conn) => {
       const p = Pushable()
@@ -44,6 +47,7 @@ module.exports = class handlePeers extends EventEmitter {
       p.end()
     })
     this.peerDiscovery(this.targetNumberOfPeers)
+    cb()
   }
 
   /**
