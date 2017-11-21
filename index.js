@@ -72,6 +72,10 @@ module.exports = class handlePeers extends EventEmitter {
   }
 
   _peerDiscovery (node, targetNumberOfPeers, newPeers) {
+    if (!node.isStarted()) {
+      return
+    }
+
     let knownPeers = node.peerBook.getAllArray()
     if (knownPeers.length < targetNumberOfPeers && newPeers.length !== 0) {
       newPeers.forEach(peer => {
