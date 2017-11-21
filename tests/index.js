@@ -194,10 +194,10 @@ tape('erros - invalid len', async t => {
 async function getPeerId (index) {
   let id
   try {
-    id = pify(PeerId.createFromJSON)(require(`./id${index}`))
+    id = pify(PeerId.createFromJSON)(require(`${__dirname}/id${index}`))
   } catch (e) {
     id = await pify(PeerId.create)()
-    fs.writeFileSync(`./id${index}.json`, JSON.stringify(id.toJSON()))
+    fs.writeFileSync(`${__dirname}/id${index}.json`, JSON.stringify(id.toJSON()))
   }
   return id
 }
