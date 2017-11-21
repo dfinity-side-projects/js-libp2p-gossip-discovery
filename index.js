@@ -22,12 +22,18 @@ module.exports = class handlePeers extends EventEmitter {
     this._onConnection = this._onConnection.bind(this)
   }
 
+  /**
+   * Attach an instance of libp2p to the discovery instance
+   * @param {Object} node - the libp2p instance
+   */
   attach (node) {
     this.node = node
   }
 
   /**
-   * starts the gossip process
+   * starts the gossip process, this is called by libp2p but if you are using
+   * this standalone then this needs to be called
+   * @param {Function} cb - a callback
    */
   start (cb) {
     const node = this.node
@@ -51,7 +57,8 @@ module.exports = class handlePeers extends EventEmitter {
   }
 
   /**
-   * stop discovery
+   * stop discovery, this is called by libp2p but if you are using
+   * this standalone then this needs to be called
    */
   stop () {
     this.node.unhandle(PROTO)

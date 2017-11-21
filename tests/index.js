@@ -94,9 +94,7 @@ tape('tests', async t => {
 
   await Promise.all(nodes.map(n => {
     return new Promise((resolve, reject) => {
-      n.start(() => {
-        resolve()
-      })
+      n.start(resolve)
     })
   }))
 
@@ -146,9 +144,7 @@ tape('Errors - no data sent', async t => {
 
   await Promise.all([mal, good].map(n => {
     return new Promise((resolve, reject) => {
-      n.start(() => {
-        resolve()
-      })
+      n.start(resolve)
     })
   }))
   await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
@@ -172,9 +168,7 @@ tape('Errors - invalid len', async t => {
 
   await Promise.all([mal, good].map(n => {
     return new Promise((resolve, reject) => {
-      n.start(() => {
-        resolve()
-      })
+      n.start(resolve)
     })
   }))
   await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
