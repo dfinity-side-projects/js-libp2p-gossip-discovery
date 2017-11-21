@@ -82,6 +82,9 @@ module.exports = class handlePeers extends EventEmitter {
       newPeers.forEach(peer => {
         peer._askedForPeers = true
         node.dial(peer, PROTO, async (err, conn) => {
+          if (!node.isStarted()) {
+            return
+          }
           if (err) {
             // Remove peers that we cannot connect to
             node.hangUp(peer, () => {
