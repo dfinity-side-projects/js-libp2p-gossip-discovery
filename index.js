@@ -13,20 +13,28 @@ const PROTO = '/discovery/gossip/0.0.0'
 
 module.exports = class handlePeers extends EventEmitter {
   /**
-   * @param {Object} node - an instace of [libp2p](https://github.com/libp2p/js-libp2p)
    * @param {Number} targetNumberOfPeers - the max number of peers to add to the peer book
    */
-  constructor (node, targetNumberOfPeers) {
+  constructor (targetNumberOfPeers) {
     super()
-    this.node = node
     this.targetNumberOfPeers = targetNumberOfPeers
     this._onConnection = this._onConnection.bind(this)
   }
 
   /**
-   * starts the gossip process
+   * Attach an instance of libp2p to the discovery instance
+   * @param {Object} node - the libp2p instance
    */
-  start () {
+  attach (node) {
+    this.node = node
+  }
+
+  /**
+   * starts the gossip process, this is called by libp2p but if you are using
+   * this standalone then this needs to be called
+   * @param {Function} cb - a callback
+   */
+  start (cb) {
     const node = this.node
     node.handle(PROTO, (proto, conn) => {
       const p = Pushable()
@@ -44,10 +52,12 @@ module.exports = class handlePeers extends EventEmitter {
       p.end()
     })
     this.peerDiscovery(this.targetNumberOfPeers)
+    cb()
   }
 
   /**
-   * stop discovery
+   * stop discovery, this is called by libp2p but if you are using
+   * this standalone then this needs to be called
    */
   stop () {
     this.node.unhandle(PROTO)
@@ -82,6 +92,12 @@ module.exports = class handlePeers extends EventEmitter {
       newPeers.forEach(peer => {
         peer._askedForPeers = true
         node.dial(peer, PROTO, async (err, conn) => {
+          if (!node.isStarted()) {
+            if (err) {
+              node.peerBook.remove(peer)
+            }
+            return
+          }
           if (err) {
             // Remove peers that we cannot connect to
             node.hangUp(peer, () => {

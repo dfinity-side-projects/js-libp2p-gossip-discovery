@@ -26,6 +26,8 @@ class Node extends libp2p {
   constructor (peerInfo, peerBook, options) {
     options = options || {}
 
+    const discovery = new GossipDiscovery(this, 10)
+
     const modules = {
       transport: [
         new TCP()
@@ -34,11 +36,11 @@ class Node extends libp2p {
         muxer: [
           multiplex
         ]
-      }
+      }, discovery: [discovery]
     }
 
     super(modules, peerInfo, peerBook, options)
-    this.discovery = new GossipDiscovery(this, 10)
+    discovery.attach(this)
   }
 }
 
@@ -47,32 +49,55 @@ class Node extends libp2p {
 const node = new Node(peerInfo)
 
 node.start(() => {
-  node.discovery.start()
+  console.log('started!')
 })
 
 ```
 
-# API
+### Table of Contents
+
+-   [constructor](#constructor)
+-   [attach](#attach)
+-   [start](#start)
+-   [stop](#stop)
+
 ## constructor
 
-[code/peer-gossip/index.js:19-23](https://github.com/wanderer/dot-files/blob/b814be3a626a84f10652c9f2abfdbc0de7cd5f04/code/peer-gossip/index.js#L19-L23 "Source code on GitHub")
+[index.js:19-23](https://github.com/wanderer/js-libp2p-peer-gossip/blob/d89bcf8279cb3f62eb9937a4b46c76317ff07d43/index.js#L19-L23 "Source code on GitHub")
 
 **Parameters**
 
--   `node` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** an instace of [libp2p](https://github.com/libp2p/js-libp2p)
 -   `targetNumberOfPeers` **[Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)** the max number of peers to add to the peer book
+
+## attach
+
+[index.js:29-31](https://github.com/wanderer/js-libp2p-peer-gossip/blob/d89bcf8279cb3f62eb9937a4b46c76317ff07d43/index.js#L29-L31 "Source code on GitHub")
+
+Attach an instance of libp2p to the discovery instance
+
+**Parameters**
+
+-   `node` **[Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object)** the libp2p instance
 
 ## start
 
-[code/peer-gossip/index.js:28-46](https://github.com/wanderer/dot-files/blob/b814be3a626a84f10652c9f2abfdbc0de7cd5f04/code/peer-gossip/index.js#L28-L46 "Source code on GitHub")
+[index.js:38-57](https://github.com/wanderer/js-libp2p-peer-gossip/blob/d89bcf8279cb3f62eb9937a4b46c76317ff07d43/index.js#L38-L57 "Source code on GitHub")
 
-starts the gossip process
+starts the gossip process, this is called by libp2p but if you are using
+this standalone then this needs to be called
+
+**Parameters**
+
+-   `cb` **[Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)** a callback
 
 ## stop
 
-[code/peer-gossip/index.js:51-54](https://github.com/wanderer/dot-files/blob/b814be3a626a84f10652c9f2abfdbc0de7cd5f04/code/peer-gossip/index.js#L51-L54 "Source code on GitHub")
+[index.js:63-66](https://github.com/wanderer/js-libp2p-peer-gossip/blob/d89bcf8279cb3f62eb9937a4b46c76317ff07d43/index.js#L63-L66 "Source code on GitHub")
 
-stop discovery
+stop discovery, this is called by libp2p but if you are using
+this standalone then this needs to be called
 
 # LICENSE
-[MPL-2.0](https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2))
+[MPL-2.0][LICENSE]
+
+[LICENSE]: https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)

@@ -16,6 +16,8 @@ class Node extends libp2p {
   constructor (peerInfo, peerBook, options) {
     options = options || {}
 
+    const discovery = new GossipDiscovery(3)
+
     const modules = {
       transport: [
         new TCP()
@@ -24,11 +26,12 @@ class Node extends libp2p {
         muxer: [
           multiplex
         ]
-      }
+      },
+      discovery: [discovery]
     }
 
     super(modules, peerInfo, peerBook, options)
-    this.discovery = new GossipDiscovery(this, 3)
+    discovery.attach(this)
   }
 }
 
@@ -91,25 +94,22 @@ tape('tests', async t => {
 
   await Promise.all(nodes.map(n => {
     return new Promise((resolve, reject) => {
-      n.start(() => {
-        n.discovery.start()
-        resolve()
-      })
+      n.start(resolve)
     })
   }))
 
   const addresses = nodes.map(n => multiaddr(n.peerInfo.multiaddrs.toArray()[0]))
-  nodes[2].discovery.on('peer', peer => {
+  nodes[2].on('peer:discovery', peer => {
     t.pass()
     isDone()
   })
 
-  nodes[1].discovery.on('peer', peer => {
+  nodes[1].on('peer:discovery', peer => {
     t.pass()
     isDone()
   })
 
-  nodes[0].discovery.on('peer', peer => {
+  nodes[0].on('peer:discovery', peer => {
     t.pass()
     isDone()
   })
@@ -120,13 +120,12 @@ tape('tests', async t => {
   function isDone () {
     count++
     if (count === 3) {
-      const stoping = nodes.map(n => {
+      const stopping = nodes.map(n => {
         return new Promise((resolve, reject) => {
-          n.discovery.stop()
           n.stop(resolve)
         })
       })
-      Promise.all(stoping).then(() => {
+      Promise.all(stopping).then(() => {
         t.end()
       })
     }
@@ -145,18 +144,12 @@ tape('Errors - no data sent', async t => {
 
   await Promise.all([mal, good].map(n => {
     return new Promise((resolve, reject) => {
-      n.start(() => {
-        if (n.discovery) {
-          n.discovery.start()
-        }
-        resolve()
-      })
+      n.start(resolve)
     })
   }))
   await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
   good.on('error', () => {
     t.equals(good.peerBook.getAllArray().length, 0)
-    good.discovery.stop()
     good.stop(() => {})
     mal.stop(() => {})
     t.end()
@@ -175,18 +168,12 @@ tape('Errors - invalid len', async t => {
 
   await Promise.all([mal, good].map(n => {
     return new Promise((resolve, reject) => {
-      n.start(() => {
-        if (n.discovery) {
-          n.discovery.start()
-        }
-        resolve()
-      })
+      n.start(resolve)
     })
   }))
   await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
   good.on('error', () => {
     t.equals(good.peerBook.getAllArray().length, 0)
-    good.discovery.stop()
     good.stop(() => {})
     mal.stop(() => {})
     t.end()
