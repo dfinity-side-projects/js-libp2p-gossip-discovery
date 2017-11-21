@@ -84,7 +84,9 @@ module.exports = class handlePeers extends EventEmitter {
         node.dial(peer, PROTO, async (err, conn) => {
           if (err) {
             // Remove peers that we cannot connect to
-            node.peerBook.remove(peer)
+            node.hangUp(peer, () => {
+              node.peerBook.remove(peer)
+            })
           } else {
             try {
               const peers = await readPeers(node, conn)
