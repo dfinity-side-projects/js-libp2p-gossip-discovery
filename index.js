@@ -87,6 +87,9 @@ module.exports = class handlePeers extends EventEmitter {
         peer._askedForPeers = true
         node.dial(peer, PROTO, async (err, conn) => {
           if (!node.isStarted()) {
+            if (err) {
+              node.peerBook.remove(peer)
+            }
             return
           }
           if (err) {
