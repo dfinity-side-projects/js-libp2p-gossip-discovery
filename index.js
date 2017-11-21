@@ -20,6 +20,7 @@ module.exports = class handlePeers extends EventEmitter {
     super()
     this.node = node
     this.targetNumberOfPeers = targetNumberOfPeers
+    this._onConnection = this._onConnection.bind(this)
   }
 
   /**
@@ -56,7 +57,7 @@ module.exports = class handlePeers extends EventEmitter {
   peerDiscovery (targetNumberOfPeers) {
     const newPeers = this.node.peerBook.getAllArray()
     this._peerDiscovery(this.node, targetNumberOfPeers, newPeers)
-    this.node.on('peer:connect', this._onConnection.bind(this))
+    this.node.on('peer:connect', this._onConnection)
   }
 
   _onConnection (peer) {
