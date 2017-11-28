@@ -43,10 +43,11 @@ module.exports = class handlePeers extends EventEmitter {
       let peers = peerBookToJson(node.peerBook)
 
       if (Object.keys(peers).length === 0) {
-        p.push(Buffer.from([0]))
+        p.push(Buffer.from(Uint32Array.from([0]).buffer))
       } else {
         peers = Buffer.from(JSON.stringify(peers))
-        p.push(Buffer.from([peers.length]))
+        const len = Uint32Array.from([peers.length]);
+        p.push(Buffer.from(len.buffer))
         p.push(peers)
       }
       p.end()
@@ -147,25 +148,30 @@ module.exports = class handlePeers extends EventEmitter {
 function readPeers (node, conn) {
   const reader = Reader()
   pull(conn, reader)
+
   return new Promise((resolve, reject) => {
-    reader.read(1, (err, len) => {
+    reader.read(4, (err, lenData) => {
       if (err) {
-        reject(err)
-      } else if (len[0] !== 0) {
-        reader.read(len[0], (err, data) => {
-          if (err) {
-            reject(err)
-          } else {
-            data = data.toString()
-            const peers = JSON.parse(data)
-            reader.abort()
-            resolve(peers)
-          }
-        })
-      } else {
-        reader.abort()
-        resolve({})
+        return reject(err)
       }
+
+      const len = lenData.readUInt32LE(0);
+
+      if (len === 0) {
+        reader.abort();
+        return resolve({});
+      }
+
+      reader.read(len, (err, data) => {
+        if (err) {
+          return reject(err)
+        }
+
+        data = data.toString();
+        const peers = JSON.parse(data);
+        reader.abort();
+        resolve(peers)
+      })
     })
   })
 }
