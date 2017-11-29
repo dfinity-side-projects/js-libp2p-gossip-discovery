@@ -150,12 +150,12 @@ function readPeers (node, conn) {
   pull(conn, reader)
 
   return new Promise(async (resolve, reject) => {
-    let lenData;
+    let lenData
 
     try {
       lenData = await leb.unsigned.read(reader)
     } catch (e) {
-      return reject(e);
+      return reject(e)
     }
 
     const len = parseInt(lenData)
