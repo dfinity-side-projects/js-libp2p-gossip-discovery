@@ -149,26 +149,32 @@ function readPeers (node, conn) {
   const reader = Reader()
   pull(conn, reader)
 
-  return new Promise((resolve, reject) => {
-    leb.unsigned.read(reader).then(lenData => {
-      const len = parseInt(lenData)
+  return new Promise(async (resolve, reject) => {
+    let lenData;
 
-      if (len === 0 || isNaN(len)) {
-        reader.abort()
-        return resolve({})
+    try {
+      lenData = await leb.unsigned.read(reader)
+    } catch (e) {
+      return reject(e);
+    }
+
+    const len = parseInt(lenData)
+
+    if (len === 0 || isNaN(len)) {
+      reader.abort()
+      return resolve({})
+    }
+
+    reader.read(len, (err, data) => {
+      if (err) {
+        return reject(err)
       }
 
-      reader.read(len, (err, data) => {
-        if (err) {
-          return reject(err)
-        }
-
-        data = data.toString()
-        const peers = JSON.parse(data)
-        reader.abort()
-        resolve(peers)
-      })
-    }).catch(reject)
+      data = data.toString()
+      const peers = JSON.parse(data)
+      reader.abort()
+      resolve(peers)
+    })
   })
 }
 
