@@ -6,6 +6,7 @@ const pull = require('pull-stream')
 const Pushable = require('pull-pushable')
 const Reader = require('pull-reader')
 const debug = require('debug')
+const leb = require('pull-leb128')
 const log = debug('discovery:gossip')
 debug.enable('discovery:gossip')
 
@@ -43,10 +44,10 @@ module.exports = class handlePeers extends EventEmitter {
       let peers = peerBookToJson(node.peerBook)
 
       if (Object.keys(peers).length === 0) {
-        p.push(Buffer.from([0]))
+        leb.unsigned.write(0, p)
       } else {
         peers = Buffer.from(JSON.stringify(peers))
-        p.push(Buffer.from([peers.length]))
+        leb.unsigned.write(peers.length, p)
         p.push(peers)
       }
       p.end()
@@ -144,28 +145,29 @@ module.exports = class handlePeers extends EventEmitter {
   }
 }
 
-function readPeers (node, conn) {
+async function readPeers (node, conn) {
   const reader = Reader()
   pull(conn, reader)
+
+  const lenData = await leb.unsigned.read(reader)
+
   return new Promise((resolve, reject) => {
-    reader.read(1, (err, len) => {
+    const len = parseInt(lenData)
+
+    if (len === 0 || isNaN(len)) {
+      reader.abort()
+      return resolve({})
+    }
+
+    reader.read(len, (err, data) => {
       if (err) {
-        reject(err)
-      } else if (len[0] !== 0) {
-        reader.read(len[0], (err, data) => {
-          if (err) {
-            reject(err)
-          } else {
-            data = data.toString()
-            const peers = JSON.parse(data)
-            reader.abort()
-            resolve(peers)
-          }
-        })
-      } else {
-        reader.abort()
-        resolve({})
+        return reject(err)
       }
+
+      data = data.toString()
+      const peers = JSON.parse(data)
+      reader.abort()
+      resolve(peers)
     })
   })
 }

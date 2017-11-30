@@ -23,6 +23,7 @@
     "multiaddr": "^3.0.1",
     "peer-id": "^0.10.2",
     "peer-info": "^0.11.1",
+    "pull-leb128": "0.0.0",
     "pull-pushable": "^2.1.1",
     "pull-reader": "^1.2.9",
     "pull-stream": "^3.6.1",
