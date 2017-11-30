@@ -149,17 +149,15 @@ async function readPeers (node, conn) {
   const reader = Reader()
   pull(conn, reader)
 
-  const lenData = await leb.unsigned.read(reader)
+  const lenData = await leb.unsigned.readBn(reader)
 
   return new Promise((resolve, reject) => {
-    const len = parseInt(lenData)
-
-    if (len === 0 || isNaN(len)) {
+    if (lenData.isZero()) {
       reader.abort()
       return resolve({})
     }
 
-    reader.read(len, (err, data) => {
+    reader.read(lenData.toNumber(), (err, data) => {
       if (err) {
         return reject(err)
       }
