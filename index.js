@@ -145,19 +145,13 @@ module.exports = class handlePeers extends EventEmitter {
   }
 }
 
-function readPeers (node, conn) {
+async function readPeers (node, conn) {
   const reader = Reader()
   pull(conn, reader)
 
-  return new Promise(async (resolve, reject) => {
-    let lenData
+  const lenData = await leb.unsigned.read(reader)
 
-    try {
-      lenData = await leb.unsigned.read(reader)
-    } catch (e) {
-      return reject(e)
-    }
-
+  return new Promise((resolve, reject) => {
     const len = parseInt(lenData)
 
     if (len === 0 || isNaN(len)) {
