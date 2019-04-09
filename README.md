@@ -40,9 +40,12 @@ class Node extends libp2p {
   }
 }
 
-////
-
 const node = new Node(peerInfo)
+
+// set bootstrap peer
+const peer = new PeerInfo(id)
+peer.multiaddrs.add(addr)
+node.peerBook.put(peer)
 
 node.start(() => {
   console.log('started!')

@@ -85,6 +85,7 @@ module.exports = class handlePeers extends EventEmitter {
 
   _peerDiscovery (node, targetNumberOfPeers, newPeers) {
     if (!node.isStarted()) {
+      setTimeout((() => {this._peerDiscovery(...arguments)}).bind(this), 100)
       return
     }
 
