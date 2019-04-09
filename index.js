@@ -92,7 +92,7 @@ module.exports = class handlePeers extends EventEmitter {
     if (knownPeers.length < targetNumberOfPeers && newPeers.length !== 0) {
       newPeers.forEach(peer => {
         peer._askedForPeers = true
-        node.dial(peer, PROTO, async (err, conn) => {
+        node.dialProtocol(peer, PROTO, async (err, conn) => {
           if (!node.isStarted()) {
             if (err) {
               node.peerBook.remove(peer)
@@ -138,7 +138,7 @@ module.exports = class handlePeers extends EventEmitter {
         })
         node.peerBook.put(peerInfo)
         newPeers.push(peerInfo)
-        this.emit('peer', peerInfo)
+        this.emit('peer:discovery', peerInfo)
       }
     })
     return newPeers
