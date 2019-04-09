@@ -139,7 +139,7 @@ module.exports = class handlePeers extends EventEmitter {
         })
         node.peerBook.put(peerInfo)
         newPeers.push(peerInfo)
-        this.emit('peer:discovery', peerInfo)
+        node.emit('peer:discovery', peerInfo)
       }
     })
     return newPeers
