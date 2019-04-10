@@ -3,54 +3,43 @@ const PeerInfo = require('peer-info')
 const PeerId = require('peer-id')
 const fs = require('fs')
 const pify = require('pify')
-const multiaddr = require('multiaddr')
 
 const libp2p = require('libp2p')
 const TCP = require('libp2p-tcp')
-const multiplex = require('libp2p-multiplex')
+const WS = require('libp2p-websockets')
+const SPDY = require('libp2p-spdy')
+const defaultsDeep = require('@nodeutils/defaults-deep')
 const pull = require('pull-stream')
 
 const GossipDiscovery = require('../')
 
 class Node extends libp2p {
-  constructor (peerInfo, peerBook, options) {
-    options = options || {}
-
+  constructor (_options) {
     const discovery = new GossipDiscovery(3)
 
-    const modules = {
-      transport: [
-        new TCP()
-      ],
-      connection: {
-        muxer: [
-          multiplex
-        ]
-      },
-      discovery: [discovery]
+    const defaults = {
+      modules: {
+        transport: [ TCP ],
+        streamMuxer: [ SPDY ],
+        peerDiscovery: [ discovery ]
+      }
     }
 
-    super(modules, peerInfo, peerBook, options)
+    super(defaultsDeep(_options, defaults))
     discovery.attach(this)
   }
 }
 
 class Malicious1 extends libp2p {
-  constructor (peerInfo, peerBook, options) {
-    options = options || {}
-
-    const modules = {
-      transport: [
-        new TCP()
-      ],
-      connection: {
-        muxer: [
-          multiplex
-        ]
+  constructor (_options) {
+    const defaults = {
+      modules: {
+        transport: [ TCP ],
+        streamMuxer: [ SPDY ]
       }
     }
 
-    super(modules, peerInfo, peerBook, options)
+    super(defaultsDeep(_options, defaults))
     this.handle('/discovery/gossip/0.0.0', (proto, conn) => {
       pull(pull.empty(), conn)
     })
@@ -58,21 +47,15 @@ class Malicious1 extends libp2p {
 }
 
 class Malicous2 extends libp2p {
-  constructor (peerInfo, peerBook, options) {
-    options = options || {}
-
-    const modules = {
-      transport: [
-        new TCP()
-      ],
-      connection: {
-        muxer: [
-          multiplex
-        ]
+  constructor (_options) {
+    const defaults = {
+      modules: {
+        transport: [ TCP ],
+        streamMuxer: [ SPDY ]
       }
     }
 
-    super(modules, peerInfo, peerBook, options)
+    super(defaultsDeep(_options, defaults))
     this.handle('/discovery/gossip/0.0.0', (proto, conn) => {
       pull(pull.once(Buffer.from([99, 1])), conn)
     })
@@ -80,16 +63,14 @@ class Malicous2 extends libp2p {
 }
 
 tape('tests', async t => {
-  t.plan(3)
+  t.plan(5)
   let count = 0
 
   const peerIds = await Promise.all([0, 1, 2].map(id => getPeerId(id)))
   const nodes = peerIds.map((pId, i) => {
     const peerInfo = new PeerInfo(pId)
-    const node = new Node(peerInfo)
-
-    node.peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/909${i}`)
-    return node
+    peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/909${i}`)
+    return new Node({peerInfo})
   })
 
   await Promise.all(nodes.map(n => {
@@ -98,7 +79,7 @@ tape('tests', async t => {
     })
   }))
 
-  const addresses = nodes.map(n => multiaddr(n.peerInfo.multiaddrs.toArray()[0]))
+  const addresses = nodes.map(n => n.peerInfo)
   nodes[2].on('peer:discovery', peer => {
     t.pass()
     isDone()
@@ -114,12 +95,12 @@ tape('tests', async t => {
     isDone()
   })
 
-  await pify(nodes[0].dial.bind(nodes[0]))(addresses[1], '/discovery/gossip/0.0.0')
-  await pify(nodes[2].dial.bind(nodes[2]))(addresses[0], '/discovery/gossip/0.0.0')
+  await pify(nodes[0].dialProtocol.bind(nodes[0]))(addresses[1], '/discovery/gossip/0.0.0')
+  await pify(nodes[2].dialProtocol.bind(nodes[2]))(addresses[0], '/discovery/gossip/0.0.0')
 
   function isDone () {
     count++
-    if (count === 3) {
+    if (count === 5) {
       const stopping = nodes.map(n => {
         return new Promise((resolve, reject) => {
           n.stop(resolve)
@@ -135,49 +116,65 @@ tape('tests', async t => {
 tape('Errors - no data sent', async t => {
   const peerIds = await Promise.all([0, 1].map(id => getPeerId(id)))
   let peerInfo = new PeerInfo(peerIds[0])
-  let good = new Node(peerInfo)
-  good.peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9090`)
+  peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9093`)
+  let good = new Node({peerInfo})
 
   peerInfo = new PeerInfo(peerIds[1])
-  const mal = new Malicious1(peerInfo)
-  mal.peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9091`)
+  peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9094`)
+  const mal = new Malicious1({peerInfo})
 
   await Promise.all([mal, good].map(n => {
     return new Promise((resolve, reject) => {
       n.start(resolve)
     })
   }))
-  await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
+  await pify(good.dialProtocol.bind(good))(mal.peerInfo, '/discovery/gossip/0.0.0')
   good.on('error', () => {
+    if (good.state._state !== 'STARTED') return
     t.equals(good.peerBook.getAllArray().length, 0)
-    good.stop(() => {})
-    mal.stop(() => {})
-    t.end()
+    const stopping = [mal, good].map(n => {
+      return new Promise((resolve, reject) => {
+        n.stop(resolve)
+      })
+    })
+    Promise.all(stopping).then(() => {
+      t.end()
+    })
   })
 })
 
 tape('Errors - invalid len', async t => {
   const peerIds = await Promise.all([0, 1].map(id => getPeerId(id)))
   let peerInfo = new PeerInfo(peerIds[0])
-  let good = new Node(peerInfo)
-  good.peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9090`)
+  peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9095`)
+  let good = new Node({peerInfo})
 
   peerInfo = new PeerInfo(peerIds[1])
-  const mal = new Malicous2(peerInfo)
-  mal.peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9091`)
+  peerInfo.multiaddrs.add(`/ip4/127.0.0.1/tcp/9096`)
+  const mal = new Malicous2({peerInfo})
 
   await Promise.all([mal, good].map(n => {
     return new Promise((resolve, reject) => {
       n.start(resolve)
     })
   }))
-  await pify(good.dial.bind(good))(mal.peerInfo.multiaddrs.toArray()[0], '/discovery/gossip/0.0.0')
+  await pify(good.dialProtocol.bind(good))(mal.peerInfo, '/discovery/gossip/0.0.0')
   good.on('error', () => {
+    if (good.state._state !== 'STARTED') return
     t.equals(good.peerBook.getAllArray().length, 0)
-    good.stop(() => {})
-    mal.stop(() => {})
-    t.end()
+    const stopping = [mal, good].map(n => {
+      return new Promise((resolve, reject) => {
+        n.stop(resolve)
+      })
+    })
+    Promise.all(stopping).then(() => {
+      t.end()
+    })
   })
+})
+
+tape.onFinish(() => {
+  process.exit(0)
 })
 
 async function getPeerId (index) {
