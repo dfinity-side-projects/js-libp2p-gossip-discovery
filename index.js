@@ -60,9 +60,10 @@ module.exports = class handlePeers extends EventEmitter {
    * stop discovery, this is called by libp2p but if you are using
    * this standalone then this needs to be called
    */
-  stop () {
+  stop (cb) {
     this.node.unhandle(PROTO)
     this.node.removeListener('peer:connect', this._onConnection)
+    cb()
   }
 
   peerDiscovery (targetNumberOfPeers) {
@@ -85,7 +86,7 @@ module.exports = class handlePeers extends EventEmitter {
 
   _peerDiscovery (node, targetNumberOfPeers, newPeers) {
     if (!node.isStarted()) {
-      setTimeout((() => {this._peerDiscovery(...arguments)}).bind(this), 100)
+      setTimeout(() => { this._peerDiscovery(...arguments) }, 100)
       return
     }
 
