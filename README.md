@@ -31,7 +31,7 @@ class Node extends libp2p {
       modules: {
         transport: [ TCP ],
         streamMuxer: [ SPDY ],
-        discovery: [ discovery ]
+        peerDiscovery: [ discovery ]
       }
     }
 
