@@ -16,37 +16,36 @@ untill `targetNumberOfPeers` is reached.
 # Usage
 
 ```javascript
-const GossipDiscovery = require('gossip-discovery')
+const GossipDiscovery = require('libp2p-gossip-discovery')
 const libp2p = require('libp2p')
 const TCP = require('libp2p-tcp')
-const multiplex = require('libp2p-multiplex')
+const SPDY = require('libp2p-spdy')
+const defaultsDeep = require('@nodeutils/defaults-deep')
 
 
 class Node extends libp2p {
-  constructor (peerInfo, peerBook, options) {
-    options = options || {}
+  constructor (_options) {
+    const discovery = new GossipDiscovery(10)
 
-    const discovery = new GossipDiscovery(this, 10)
-
-    const modules = {
-      transport: [
-        new TCP()
-      ],
-      connection: {
-        muxer: [
-          multiplex
-        ]
-      }, discovery: [discovery]
+    const defaults = {
+      modules: {
+        transport: [ TCP ],
+        streamMuxer: [ SPDY ],
+        peerDiscovery: [ discovery ]
+      }
     }
 
-    super(modules, peerInfo, peerBook, options)
+    super(defaultsDeep(_options, defaults))
     discovery.attach(this)
   }
 }
 
-////
-
 const node = new Node(peerInfo)
+
+// set bootstrap peer
+const peer = new PeerInfo(id)
+peer.multiaddrs.add(addr)
+node.peerBook.put(peer)
 
 node.start(() => {
   console.log('started!')

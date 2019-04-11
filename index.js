@@ -60,9 +60,10 @@ module.exports = class handlePeers extends EventEmitter {
    * stop discovery, this is called by libp2p but if you are using
    * this standalone then this needs to be called
    */
-  stop () {
+  stop (cb) {
     this.node.unhandle(PROTO)
     this.node.removeListener('peer:connect', this._onConnection)
+    cb()
   }
 
   peerDiscovery (targetNumberOfPeers) {
@@ -72,7 +73,7 @@ module.exports = class handlePeers extends EventEmitter {
   }
 
   _onConnection (peer) {
-    log('connected peer, restarting discovery')
+    log('connected peer, restarting discovery', peer.id.toB58String())
     try {
       const info = this.node.peerBook.get(peer)
       if (!info._askedForPeers) {
@@ -85,6 +86,7 @@ module.exports = class handlePeers extends EventEmitter {
 
   _peerDiscovery (node, targetNumberOfPeers, newPeers) {
     if (!node.isStarted()) {
+      setTimeout(() => { this._peerDiscovery(...arguments) }, 100)
       return
     }
 
@@ -92,9 +94,10 @@ module.exports = class handlePeers extends EventEmitter {
     if (knownPeers.length < targetNumberOfPeers && newPeers.length !== 0) {
       newPeers.forEach(peer => {
         peer._askedForPeers = true
-        node.dial(peer, PROTO, async (err, conn) => {
+        node.dialProtocol(peer, PROTO, async (err, conn) => {
           if (!node.isStarted()) {
             if (err) {
+              log('not yet started, removed peer', peer.id.toB58String(), err)
               node.peerBook.remove(peer)
             }
             return
@@ -103,6 +106,7 @@ module.exports = class handlePeers extends EventEmitter {
             // Remove peers that we cannot connect to
             node.hangUp(peer, () => {
               node.peerBook.remove(peer)
+              log('removed unreachable peer', peer.id.toB58String(), err)
             })
           } else {
             try {
@@ -113,6 +117,7 @@ module.exports = class handlePeers extends EventEmitter {
               // Remove peers that are potentially malicous
               node.hangUp(peer, () => {
                 node.peerBook.remove(peer)
+                log('removed malicious peer', peer.id.toB58String(), err)
                 node.emit('error', peer)
               })
             }
@@ -130,15 +135,16 @@ module.exports = class handlePeers extends EventEmitter {
         node.peerBook.get(id)
         log('already have peer ', id)
       } catch (e) {
-        const peerId = PeerId.createFromB58String(id)
-        const peerInfo = new PeerInfo(peerId)
-        const addresses = peers[id]
-        addresses.forEach(ad => {
-          peerInfo.multiaddrs.add(`${ad}/ipfs/${id}`)
+        PeerId.createFromJSON(peers[id], (err, peerId) => {
+          const peerInfo = new PeerInfo(peerId)
+          const addresses = peers[id].multiaddrs
+          addresses.forEach(ad => {
+            peerInfo.multiaddrs.add(ad)
+          })
+          node.peerBook.put(peerInfo)
+          newPeers.push(peerInfo)
+          node.emit('peer:discovery', peerInfo)
         })
-        node.peerBook.put(peerInfo)
-        newPeers.push(peerInfo)
-        this.emit('peer', peerInfo)
       }
     })
     return newPeers
@@ -173,9 +179,11 @@ async function readPeers (node, conn) {
 function peerBookToJson (peerBook) {
   let peers = {}
   peerBook.getAllArray().forEach(pi => {
-    peers[pi.id.toB58String()] = pi.multiaddrs.toArray().map(add => {
-      return add.toString().split('/').slice(0, -2).join('/')
-    })
+    const json = pi.id.toJSON()
+    json.multiaddrs = pi.multiaddrs.toArray()
+      .filter(a => !/127\.0\.0\.1|circuit/.test(a))
+      .map(a => a.toString().split('/').slice(0, -2).join('/'))
+    peers[pi.id.toB58String()] = json
   })
   return peers
 }
