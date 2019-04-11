@@ -6,7 +6,6 @@ const pify = require('pify')
 
 const libp2p = require('libp2p')
 const TCP = require('libp2p-tcp')
-const WS = require('libp2p-websockets')
 const SPDY = require('libp2p-spdy')
 const defaultsDeep = require('@nodeutils/defaults-deep')
 const pull = require('pull-stream')
